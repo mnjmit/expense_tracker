@@ -79,4 +79,3 @@ The new expense will appear in the table below, and the "Today's Total" and "Thi
 
 You can delete any expense by clicking the red **"Delete"** button in its corresponding row.
 
-#this is a change to make new commit

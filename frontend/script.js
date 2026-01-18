@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- API Base URL ---
     // This should point to your backend server.
-    const API_URL = 'http://localhost:3000/expenses';
+    const API_URL = 'https://expense-tracker-kqi8.onrender.com/expenses';
 
     // --- Pre-fill Date Input ---
     // Set the date input to today's date by default for user convenience.
