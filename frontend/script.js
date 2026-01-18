@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAndRenderExpenses() {
         try {
             // 1. Fetch data from the backend
-            const response = await fetch(API_URL);
+            const response = await fetch(API_URL, { cache: 'no-cache' });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
