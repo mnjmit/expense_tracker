@@ -1,5 +1,4 @@
 // backend/routes/expenses.js
-
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -7,65 +6,54 @@ const db = require('../db');
 // --- API Endpoints for Expenses ---
 
 // GET /expenses - Get all expenses
-// Retrieves all expenses from the database, ordered by date descending.
-router.get('/', (req, res) => {
-    const sql = "SELECT * FROM expenses ORDER BY date DESC";
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({
-            message: 'success',
-            data: rows
-        });
-    });
+router.get('/', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM expenses ORDER BY date DESC');
+    res.json({ message: 'success', data: rows });
+  } catch (err) {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // POST /expenses - Add a new expense
-// Adds a new expense record to the database.
-router.post('/', (req, res) => {
-    const { date, category, description, amount } = req.body;
-    // Simple validation
-    if (!date || !category || amount === undefined || amount === null) {
-        res.status(400).json({ error: 'Missing required fields: date, category, amount' });
-        return;
-    }
+router.post('/', async (req, res) => {
+  const { date, category, description, amount } = req.body;
 
-    const sql = 'INSERT INTO expenses (date, category, description, amount) VALUES (?, ?, ?, ?)';
-    const params = [date, category, description, amount];
+  // Simple validation
+  if (!date || !category || amount === undefined || amount === null) {
+    return res.status(400).json({ error: 'Missing required fields: date, category, amount' });
+  }
 
-    db.run(sql, params, function (err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        // Return the newly created expense with its ID
-        res.status(201).json({
-            message: 'success',
-            data: { id: this.lastID, ...req.body }
-        });
-    });
+  const sql = 'INSERT INTO expenses (date, category, description, amount) VALUES ($1, $2, $3, $4) RETURNING *';
+  const params = [date, category, description, amount];
+
+  try {
+    const { rows } = await db.query(sql, params);
+    res.status(201).json({ message: 'success', data: rows[0] });
+  } catch (err) {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // DELETE /expenses/:id - Delete an expense
-// Deletes an expense record by its ID.
-router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-    const sql = 'DELETE FROM expenses WHERE id = ?';
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const sql = 'DELETE FROM expenses WHERE id = $1';
 
-    db.run(sql, id, function (err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        // Check if any row was deleted
-        if (this.changes === 0) {
-            res.status(404).json({ message: `Expense with id ${id} not found` });
-        } else {
-            res.json({ message: `Expense with id ${id} deleted successfully` });
-        }
-    });
+  try {
+    const result = await db.query(sql, [id]);
+    // Check if any row was deleted
+    if (result.rowCount === 0) {
+      res.status(404).json({ message: `Expense with id ${id} not found` });
+    } else {
+      res.json({ message: `Expense with id ${id} deleted successfully` });
+    }
+  } catch (err) {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;
